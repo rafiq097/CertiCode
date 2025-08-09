@@ -16,11 +16,13 @@ export default function Dashboard() {
           return;
         }
 
-        const res = axios.get("http://127.0.0.1:5000/api/get-user", {
+        const res = await axios.get("http://127.0.0.1:5000/api/get-user", {
           headers: { Authorization: `Bearer ${getToken()}` },
         });
 
-        const data = await res.json();
+        console.log(res);
+        const data = await res.data;
+        console.log(data);
         if (data.status === "success") {
           setUser(data.user);
         } else {
@@ -28,6 +30,7 @@ export default function Dashboard() {
         }
       } catch (err: any) {
         console.error("Login error:", err.message);
+        navigate("/login");
       }
     }
 

@@ -146,6 +146,7 @@ def get_user(user_id):
             "status": "success",
             "user": {"id": user[0], "name": user[1], "email": user[2]}
         })
+        
     return jsonify({"status": "error", "message": "User not found"}), 404
 
 
