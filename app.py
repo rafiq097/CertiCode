@@ -78,9 +78,20 @@ def register():
 
     return render_template('register.html',form=form)
 
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' in session:
+        user_id = session['user_id']
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM users where id=%s",(user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+
+        if user:
+            return render_template('dashboard.html',user=user)
+            
+    return redirect(url_for('login'))
 
 if __name__ == "__main__":
     app.run(debug=True)
