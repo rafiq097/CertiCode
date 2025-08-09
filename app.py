@@ -71,5 +71,24 @@ def login():
         return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
 
+@app.route('/api/dashboard', methods=['GET'])
+def dashboard():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT id, name, email FROM users WHERE id=%s", (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        if user:
+            return jsonify({"status": "success", "user": {"id": user[0], "name": user[1], "email": user[2]}})
+    return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    return jsonify({"status": "success", "message": "Logged out successfully"})
+
+
 if __name__ == "__main__":
     app.run(debug=True)
