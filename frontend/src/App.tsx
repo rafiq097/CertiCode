@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 import { getToken } from "./utils/auth";
+import QuizPage from "./pages/QuizPage";
 
 function App() {
   return (
@@ -26,6 +27,10 @@ function App() {
         <Route
           path="/register"
           element={getToken() ? <Navigate to="/" /> : <RegisterPage />}
+        />
+        <Route
+          path="/quiz"
+          element={getToken() ? <QuizPage /> : <Navigate to="/" />}
         />
       </Routes>
     </Router>
