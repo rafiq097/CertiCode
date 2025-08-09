@@ -14,9 +14,39 @@ app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
-app.secret_key = os.getenv('SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 mysql = MySQL(app)
+
+
+def generate_token(user_id):
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+    }
+    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm="HS256")
+
+def token_required(func):
+    def wrapper(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(" ")[1]
+        if not token:
+            return jsonify({"status": "error", "message": "Token missing"}), 401
+        
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            user_id = data['user_id']
+        except jwt.ExpiredSignatureError:
+            return jsonify({"status": "error", "message": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"status": "error", "message": "Invalid token"}), 401
+        
+        return func(user_id, *args, **kwargs)
+    
+    wrapper.__name__ = func.__name__
+    return wrapper
+
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -34,8 +64,8 @@ def register():
         return jsonify({"status": "error", "message": "Email already registered"}), 400
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-    cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password.decode('utf-8')))
+    cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", 
+                   (name, email, hashed_password.decode('utf-8')))
     mysql.connection.commit()
     cursor.close()
 
@@ -57,10 +87,11 @@ def login():
     cursor.close()
 
     if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
-        session['user_id'] = user[0]
+        token = generate_token(user[0])
         return jsonify({
             "status": "success",
             "message": "Login successful",
+            "token": token,
             "user": {
                 "id": user[0],
                 "name": user[1],
@@ -72,16 +103,15 @@ def login():
 
 
 @app.route('/api/dashboard', methods=['GET'])
-def dashboard():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        cursor = mysql.connection.cursor()
-        cursor.execute("SELECT id, name, email FROM users WHERE id=%s", (user_id,))
-        user = cursor.fetchone()
-        cursor.close()
-        if user:
-            return jsonify({"status": "success", "user": {"id": user[0], "name": user[1], "email": user[2]}})
-    return jsonify({"status": "error", "message": "Unauthorized"}), 401
+@token_required
+def dashboard(user_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT id, name, email FROM users WHERE id=%s", (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    if user:
+        return jsonify({"status": "success", "user": {"id": user[0], "name": user[1], "email": user[2]}})
+    return jsonify({"status": "error", "message": "User not found"}), 404
 
 
 @app.route('/api/logout', methods=['POST'])
