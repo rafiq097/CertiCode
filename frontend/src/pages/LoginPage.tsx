@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { saveToken } from "../utils/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,8 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.status === "success") {
-        navigate("/dashboard");
+        saveToken(data.token);
+        navigate("/");
       } else {
         setError(data.message);
       }

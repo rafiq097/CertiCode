@@ -1,9 +1,42 @@
-import React from 'react'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { getToken, logout } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
 
-const HomePage = () => {
+export default function Dashboard() {
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    axios.get("http://127.0.0.1:5000/api/get-user", {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    .then(res => {
+      setUser(res.data.user);
+    })
+    .catch(() => {
+      logout();
+      navigate("/login");
+    });
+  }, []);
+
   return (
-    <div>HomePage</div>
-  )
+    <div className="p-6">
+      {user ? (
+        <>
+          <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
+          <p>Email: {user?.email}</p>
+          <button
+            onClick={() => { logout(); navigate("/login"); }}
+            className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
+          >
+            Logout
+          </button>
+        </>
+      ) : (
+        <p>Loading...</p>
+      )}
+    </div>
+  );
 }
-
-export default HomePage;

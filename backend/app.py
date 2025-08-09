@@ -64,8 +64,7 @@ def register():
         return jsonify({"status": "error", "message": "Email already registered"}), 400
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", 
-                   (name, email, hashed_password.decode('utf-8')))
+    cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password.decode('utf-8')))
     mysql.connection.commit()
     cursor.close()
 
@@ -102,9 +101,9 @@ def login():
         return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
 
-@app.route('/api/dashboard', methods=['GET'])
+@app.route('/api/get-user', methods=['GET'])
 @token_required
-def dashboard(user_id):
+def get_user(user_id):
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT id, name, email FROM users WHERE id=%s", (user_id,))
     user = cursor.fetchone()
