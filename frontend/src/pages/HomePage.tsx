@@ -23,6 +23,7 @@ export default function HomePage() {
         const data = res.data;
         if (data.status === "success") {
           setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
         } else {
           navigate("/login");
         }

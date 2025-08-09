@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import generateCertificate from "../components/generateCertificate";
 
 export default function QuizPage() {
   const [searchParams] = useSearchParams();
@@ -35,31 +36,96 @@ export default function QuizPage() {
 
     if (type === "dev" || type === "dsa") {
       questions = [
-        mcq("What does HTML stand for?", ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks Text Mark Language"], "Hyper Text Markup Language"),
+        mcq(
+          "What does HTML stand for?",
+          [
+            "Hyper Text Markup Language",
+            "Home Tool Markup Language",
+            "Hyperlinks Text Mark Language",
+          ],
+          "Hyper Text Markup Language"
+        ),
         mcq("What is the value of 2 + 2 in JavaScript?", ["3", "4", "5"], "4"),
 
-        mcq("Which keyword is used to declare a constant in JavaScript?", ["let", "var", "const"], "const"),
-        mcq("Which data structure uses FIFO?", ["Stack", "Queue", "Heap"], "Queue"),
-        textQ("Explain the concept of closures in JavaScript.", "Closures allow a function to access variables from its outer scope even after the outer function has finished executing."),
-        voiceQ("Describe binary search algorithm.", "Binary search repeatedly divides the sorted list in half until the target is found."),
-        textQ("What is a promise in JavaScript?", "An object representing the eventual completion or failure of an asynchronous operation."),
+        mcq(
+          "Which keyword is used to declare a constant in JavaScript?",
+          ["let", "var", "const"],
+          "const"
+        ),
+        mcq(
+          "Which data structure uses FIFO?",
+          ["Stack", "Queue", "Heap"],
+          "Queue"
+        ),
+        textQ(
+          "Explain the concept of closures in JavaScript.",
+          "Closures allow a function to access variables from its outer scope even after the outer function has finished executing."
+        ),
+        voiceQ(
+          "Describe binary search algorithm.",
+          "Binary search repeatedly divides the sorted list in half until the target is found."
+        ),
+        textQ(
+          "What is a promise in JavaScript?",
+          "An object representing the eventual completion or failure of an asynchronous operation."
+        ),
 
-        mcq("What is the time complexity of quicksort on average?", ["O(n log n)", "O(n^2)", "O(log n)"], "O(n log n)"),
-        voiceQ("Explain the difference between process and thread.", "A process is an independent program in execution, while a thread is a smaller unit of execution within a process."),
-        textQ("What is memoization in dynamic programming?", "An optimization technique that stores computed results to avoid redundant calculations."),
+        mcq(
+          "What is the time complexity of quicksort on average?",
+          ["O(n log n)", "O(n^2)", "O(log n)"],
+          "O(n log n)"
+        ),
+        voiceQ(
+          "Explain the difference between process and thread.",
+          "A process is an independent program in execution, while a thread is a smaller unit of execution within a process."
+        ),
+        textQ(
+          "What is memoization in dynamic programming?",
+          "An optimization technique that stores computed results to avoid redundant calculations."
+        ),
       ];
     } else {
       questions = [
-        textQ("Explain REST API principles.", "REST uses stateless communication, resource-based URIs, and standard HTTP methods."),
-        voiceQ("Describe how garbage collection works in Java.", "Automatically frees memory by removing objects no longer reachable."),
-        textQ("What are microservices?", "An architectural style that structures an application as a collection of small, loosely coupled services."),
-        voiceQ("Explain difference between TCP and UDP.", "TCP is connection-oriented, reliable; UDP is connectionless, faster but unreliable."),
-        textQ("What is polymorphism in OOP?", "The ability of different objects to respond differently to the same function call."),
-        voiceQ("Explain CAP theorem.", "States that in a distributed system you can only have two of Consistency, Availability, Partition tolerance."),
-        textQ("What is dependency injection?", "A design pattern where dependencies are provided rather than hardcoded."),
-        voiceQ("Describe event loop in Node.js.", "Handles asynchronous callbacks and non-blocking I/O."),
-        textQ("What are design patterns?", "Reusable solutions to common software design problems."),
-        voiceQ("Explain how HTTPS works.", "Uses SSL/TLS to encrypt data between client and server."),
+        textQ(
+          "Explain REST API principles.",
+          "REST uses stateless communication, resource-based URIs, and standard HTTP methods."
+        ),
+        voiceQ(
+          "Describe how garbage collection works in Java.",
+          "Automatically frees memory by removing objects no longer reachable."
+        ),
+        textQ(
+          "What are microservices?",
+          "An architectural style that structures an application as a collection of small, loosely coupled services."
+        ),
+        voiceQ(
+          "Explain difference between TCP and UDP.",
+          "TCP is connection-oriented, reliable; UDP is connectionless, faster but unreliable."
+        ),
+        textQ(
+          "What is polymorphism in OOP?",
+          "The ability of different objects to respond differently to the same function call."
+        ),
+        voiceQ(
+          "Explain CAP theorem.",
+          "States that in a distributed system you can only have two of Consistency, Availability, Partition tolerance."
+        ),
+        textQ(
+          "What is dependency injection?",
+          "A design pattern where dependencies are provided rather than hardcoded."
+        ),
+        voiceQ(
+          "Describe event loop in Node.js.",
+          "Handles asynchronous callbacks and non-blocking I/O."
+        ),
+        textQ(
+          "What are design patterns?",
+          "Reusable solutions to common software design problems."
+        ),
+        voiceQ(
+          "Explain how HTTPS works.",
+          "Uses SSL/TLS to encrypt data between client and server."
+        ),
       ];
     }
 
@@ -190,7 +256,13 @@ export default function QuizPage() {
                   🎉 Congratulations! You passed.
                 </p>
                 <button
-                  onClick={() => alert("Certificate generated!")}
+                  onClick={() =>
+                    generateCertificate(
+                      `${JSON.parse(localStorage.getItem("user") || "")?.name}`,
+                      type,
+                      (score / (quiz.length * 10)) * 100
+                    )
+                  }
                   className="bg-yellow-500 hover:bg-yellow-600 px-6 py-3 rounded-lg text-white"
                 >
                   Download Certificate
