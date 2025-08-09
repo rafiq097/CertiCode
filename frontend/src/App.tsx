@@ -15,14 +15,17 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={getToken() ? <HomePage /> : <LoginPage />} />
+        <Route
+          path="/"
+          element={getToken() ? <HomePage /> : <Navigate to="/login" />}
+        />
         <Route
           path="/login"
-          element={getToken() ? <LoginPage /> : <HomePage />}
+          element={getToken() ? <Navigate to="/" /> : <LoginPage />}
         />
         <Route
           path="/register"
-          element={getToken() ? <RegisterPage /> : <HomePage />}
+          element={getToken() ? <Navigate to="/" /> : <RegisterPage />}
         />
       </Routes>
     </Router>

@@ -9,16 +9,29 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://127.0.0.1:5000/api/get-user", {
-      headers: { Authorization: `Bearer ${getToken()}` }
-    })
-    .then(res => {
-      setUser(res.data.user);
-    })
-    .catch(() => {
-      logout();
-      navigate("/login");
-    });
+    async function fetchUser() {
+      try {
+        if (!getToken()) {
+          navigate("/login");
+          return;
+        }
+
+        const res = axios.get("http://127.0.0.1:5000/api/get-user", {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+
+        const data = await res.json();
+        if (data.status === "success") {
+          setUser(data.user);
+        } else {
+          navigate("/login");
+        }
+      } catch (err: any) {
+        console.error("Login error:", err.message);
+      }
+    }
+
+    fetchUser();
   }, []);
 
   return (
@@ -28,7 +41,10 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
           <p>Email: {user?.email}</p>
           <button
-            onClick={() => { logout(); navigate("/login"); }}
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
             className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
           >
             Logout

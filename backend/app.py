@@ -1,22 +1,45 @@
 from flask import Flask, request, jsonify, session
-from flask_mysqldb import MySQL
 from dotenv import load_dotenv
 from flask_cors import CORS
 import bcrypt
 import os
+import jwt
+import datetime
+import MySQLdb
 
-load_dotenv()
+load_dotenv(dotenv_path="./.env")
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+# Load config from .env
+DB_HOST = os.getenv('MYSQL_HOST')
+DB_USER = os.getenv('MYSQL_USER')
+DB_PASSWORD = os.getenv('MYSQL_PASSWORD')
+DB_NAME = os.getenv('MYSQL_DB')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-mysql = MySQL(app)
+app.config['SECRET_KEY'] = SECRET_KEY
+
+# Connection helper
+def get_db_connection():
+    return MySQLdb.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        passwd=DB_PASSWORD,
+        db=DB_NAME,
+        charset='utf8mb4'
+    )
+
+# Test connection at startup
+try:
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT 1")
+    conn.close()
+    print("MySQL connected successfully")
+except Exception as e:
+    print("MySQL connection failed:", e)
 
 
 def generate_token(user_id):
@@ -25,6 +48,7 @@ def generate_token(user_id):
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=12)
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm="HS256")
+
 
 def token_required(func):
     def wrapper(*args, **kwargs):
@@ -58,15 +82,21 @@ def register():
     if not name or not email or not password:
         return jsonify({"status": "error", "message": "All fields are required"}), 400
 
-    cursor = mysql.connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
     if cursor.fetchone():
+        conn.close()
         return jsonify({"status": "error", "message": "Email already registered"}), 400
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password.decode('utf-8')))
-    mysql.connection.commit()
-    cursor.close()
+    cursor.execute(
+        "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
+        (name, email, hashed_password.decode('utf-8'))
+    )
+    conn.commit()
+    conn.close()
 
     return jsonify({"status": "success", "message": "User registered successfully"}), 201
 
@@ -80,10 +110,11 @@ def login():
     if not email or not password:
         return jsonify({"status": "error", "message": "Email and password required"}), 400
 
-    cursor = mysql.connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("SELECT id, name, email, password FROM users WHERE email=%s", (email,))
     user = cursor.fetchone()
-    cursor.close()
+    conn.close()
 
     if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
         token = generate_token(user[0])
@@ -104,12 +135,17 @@ def login():
 @app.route('/api/get-user', methods=['GET'])
 @token_required
 def get_user(user_id):
-    cursor = mysql.connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("SELECT id, name, email FROM users WHERE id=%s", (user_id,))
     user = cursor.fetchone()
-    cursor.close()
+    conn.close()
+
     if user:
-        return jsonify({"status": "success", "user": {"id": user[0], "name": user[1], "email": user[2]}})
+        return jsonify({
+            "status": "success",
+            "user": {"id": user[0], "name": user[1], "email": user[2]}
+        })
     return jsonify({"status": "error", "message": "User not found"}), 404
 
 
