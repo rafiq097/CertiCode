@@ -35,18 +35,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-6 rounded shadow-md w-full max-w-sm"
+        className="bg-gray-800/90 border border-gray-700 rounded-xl p-8 w-full max-w-sm shadow-lg shadow-indigo-500/10 backdrop-blur-md"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
-        {error && <p className="text-red-500 mb-2">{error}</p>}
+        <h2 className="text-3xl font-extrabold mb-6 text-center text-indigo-400">
+          CertiCode Login
+        </h2>
+
+        {error && (
+          <p className="text-red-400 bg-red-500/10 p-2 rounded mb-4 text-sm">
+            {error}
+          </p>
+        )}
 
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-2 border rounded mb-3"
+          className="w-full p-3 bg-gray-900/80 border border-gray-700 rounded-lg mb-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -54,23 +61,23 @@ export default function LoginPage() {
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-2 border rounded mb-3"
+          className="w-full p-3 bg-gray-900/80 border border-gray-700 rounded-lg mb-6 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md shadow-indigo-500/20 transition"
         >
           Login
         </button>
 
         <p
-          className="mt-3 text-sm text-blue-500 cursor-pointer"
+          className="mt-4 text-sm text-indigo-400 hover:text-indigo-300 cursor-pointer text-center transition"
           onClick={() => navigate("/register")}
         >
-          Don’t have an account? Register
+          Don’t have an account? <span className="underline">Register</span>
         </p>
       </form>
     </div>
