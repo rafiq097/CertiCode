@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { getToken, logout } from "../utils/auth";
+import { getToken } from "../utils/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
@@ -51,8 +51,8 @@ export default function HomePage() {
           )}
           <button
             onClick={() => {
-              logout();
-              navigate("/login");
+              localStorage.removeItem("token");
+              navigate("/login");          
             }}
             className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-white text-sm shadow transition"
           >
