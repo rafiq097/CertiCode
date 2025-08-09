@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import generateCertificate from "../components/generateCertificate";
+import { getToken } from "../utils/auth";
+import axios from "axios";
 
 export default function QuizPage() {
   const [searchParams] = useSearchParams();
@@ -13,6 +16,35 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [started, setStarted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        if (!getToken()) {
+          navigate("/login");
+          return;
+        }
+
+        const res = await axios.get("http://127.0.0.1:5000/api/get-user", {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+
+        const data = res.data;
+        if (data.status === "success") {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          navigate("/login");
+        }
+      } catch (err: any) {
+        console.error("Login error:", err.message);
+        navigate("/login");
+      }
+    }
+
+    fetchUser();
+  }, [navigate]);
 
   const generateMockQuiz = () => {
     const mcq = (q: string, opts: string[], ans: string) => ({
