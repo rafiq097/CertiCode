@@ -20,6 +20,20 @@ class RegisterForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Register")
+    
+    def validate_email(self,field):
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM users where email=%s",(field.data,))
+        user = cursor.fetchone()
+        cursor.close()
+        if user:
+            raise ValidationError('Email Already Taken')
+        
+class LoginForm(FlaskForm):
+    email = StringField("Email",validators=[DataRequired(), Email()])
+    password = PasswordField("Password",validators=[DataRequired()])
+    submit = SubmitField("Login")
+
 
 @app.route('/')
 def index():
@@ -27,7 +41,23 @@ def index():
 
 @app.route('/login')
 def login():
-    return render_template("login.html")
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE email=%s",(email,))
+        user = cursor.fetchone()
+        cursor.close()
+        if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+            session['user_id'] = user[0]
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Login failed. Please check your email and password")
+            return redirect(url_for('login'))
+
+    return render_template('login.html',form=form)
 
 @app.route('/register')
 def register():
@@ -39,7 +69,14 @@ def register():
         
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(10))
         
-    return render_template("register.html")
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO users (name,email,password) VALUES (%s,%s,%s)",(name,email,hashed_password))
+        mysql.connection.commit()
+        cursor.close()
+
+        return redirect(url_for('login'))
+
+    return render_template('register.html',form=form)
 
 @app.route('/admin')
 def admin():
