@@ -41,5 +41,35 @@ def register():
 
     return jsonify({"status": "success", "message": "User registered successfully"}), 201
 
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"status": "error", "message": "Email and password required"}), 400
+
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT id, name, email, password FROM users WHERE email=%s", (email,))
+    user = cursor.fetchone()
+    cursor.close()
+
+    if user and bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+        session['user_id'] = user[0]
+        return jsonify({
+            "status": "success",
+            "message": "Login successful",
+            "user": {
+                "id": user[0],
+                "name": user[1],
+                "email": user[2]
+            }
+        }), 200
+    else:
+        return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+
+
 if __name__ == "__main__":
     app.run(debug=True)
