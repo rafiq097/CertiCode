@@ -29,8 +29,8 @@ function App() {
           element={getToken() ? <Navigate to="/" /> : <RegisterPage />}
         />
         <Route
-          path="/quiz"
-          element={getToken() ? <QuizPage /> : <Navigate to="/" />}
+          path="/quiz/:type"
+          element={<QuizPage />}
         />
       </Routes>
     </Router>

@@ -34,7 +34,7 @@ export default function HomePage() {
     }
 
     fetchUser();
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
@@ -53,7 +53,7 @@ export default function HomePage() {
           <button
             onClick={() => {
               localStorage.removeItem("token");
-              navigate("/login");          
+              navigate("/login");
             }}
             className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-white text-sm shadow transition"
           >
@@ -72,7 +72,9 @@ export default function HomePage() {
           
           {/* Dev Quiz */}
           <div
-            onClick={() => navigate("/quiz?type=dev")}
+            onClick={(e) => {
+            e.preventDefault();
+            navigate("/quiz/dev")}}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
             <div className="flex items-center justify-between">
@@ -89,7 +91,9 @@ export default function HomePage() {
 
           {/* DSA Quiz */}
           <div
-            onClick={() => navigate("/quiz?type=dsa")}
+            onClick={(e) => {
+            e.preventDefault();
+            navigate("/quiz/dsa")}}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
             <div className="flex items-center justify-between">
@@ -105,7 +109,10 @@ export default function HomePage() {
 
           {/* Interview Mode */}
           <div
-            onClick={() => navigate("/quiz?type=interview")}
+            onClick={(e) => {
+            e.preventDefault();
+            navigate("/quiz/interview")
+            }}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
             <div className="flex items-center justify-between">

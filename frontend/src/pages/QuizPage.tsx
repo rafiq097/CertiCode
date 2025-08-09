@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import generateCertificate from "../components/generateCertificate";
 import { getToken } from "../utils/auth";
 import axios from "axios";
 
 export default function QuizPage() {
-  const [searchParams] = useSearchParams();
-  const type = searchParams.get("type") || "dev";
+  const { type } = useParams();
   const navigate = useNavigate();
 
   const [quiz, setQuiz] = useState<any[]>([]);
@@ -44,7 +43,7 @@ export default function QuizPage() {
     }
 
     fetchUser();
-  }, [navigate]);
+  }, []);
 
   const generateMockQuiz = () => {
     const mcq = (q: string, opts: string[], ans: string) => ({
