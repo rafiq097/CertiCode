@@ -21,7 +21,6 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 app.config['SECRET_KEY'] = SECRET_KEY
 
-# Connection helper
 def get_db_connection():
     return MySQLdb.connect(
         host=DB_HOST,
@@ -30,16 +29,6 @@ def get_db_connection():
         db=DB_NAME,
         charset='utf8mb4'
     )
-
-# Test connection at startup
-try:
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT 1")
-    conn.close()
-    print("MySQL connected successfully")
-except Exception as e:
-    print("MySQL connection failed:", e)
 
 
 def generate_token(user_id):
