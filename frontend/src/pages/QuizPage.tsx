@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import generateCertificate from "../components/generateCertificate";
 import { getToken } from "../utils/auth";
 import axios from "axios";
+import { GoogleGenAI } from "@google/genai";
 
 export default function QuizPage() {
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   const { type } = useParams();
   const navigate = useNavigate();
 
@@ -16,6 +17,8 @@ export default function QuizPage() {
   const [started, setStarted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [validating, setValidating] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -45,151 +48,113 @@ export default function QuizPage() {
     fetchUser();
   }, []);
 
-  const generateMockQuiz = () => {
-    const mcq = (q: string, opts: string[], ans: string) => ({
-      question: q,
-      type: "mcq",
-      options: opts,
-      answer: ans,
-    });
-    const textQ = (q: string, ans: string) => ({
-      question: q,
-      type: "text",
-      answer: ans,
-    });
-    const voiceQ = (q: string, ans: string) => ({
-      question: q,
-      type: "voice",
-      answer: ans,
-    });
+  async function generateQuizFromGemini() {
+    setGenerating(true);
+    const prompt = `
+  Generate a quiz of exactly 10 questions for a ${type} quiz with the following distribution and format:
+  
+  - Easy: 2 questions (1 MCQ, 1 Text)
+  - Medium: 5 questions (3 MCQ, 2 Text)
+  - Hard: 3 questions (1 MCQ, 2 Text or Voice)
+  - for interview questions include general questions that can be asked in any interview and not specific to any company and no exact answers, just general questions but for this just give one answer to show.
+  
+  Output only a JSON array of questions, each question as an object with the following fields:
+  - "question": string
+  - "type": one of "mcq", "text", "voice"
+  - "options": array of strings (only for "mcq" questions)
+  - "answer": string (correct answer)
+  
+  No explanations or extra text, only JSON.
+  `;
 
-    let questions: any[] = [];
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-lite",
+        contents: prompt,
+        config: { temperature: 0.5, maxOutputTokens: 1000, topK: 40 },
+      });
 
-    if (type === "dev" || type === "dsa") {
-      questions = [
-        mcq(
-          "What does HTML stand for?",
-          [
-            "Hyper Text Markup Language",
-            "Home Tool Markup Language",
-            "Hyperlinks Text Mark Language",
-          ],
-          "Hyper Text Markup Language"
-        ),
-        mcq("What is the value of 2 + 2 in JavaScript?", ["3", "4", "5"], "4"),
+      const jsonString = (response.text || "")
+        .replace(/```json/, "")
+        .replace(/```/, "")
+        .trim();
 
-        mcq(
-          "Which keyword is used to declare a constant in JavaScript?",
-          ["let", "var", "const"],
-          "const"
-        ),
-        mcq(
-          "Which data structure uses FIFO?",
-          ["Stack", "Queue", "Heap"],
-          "Queue"
-        ),
-        textQ(
-          "Explain the concept of closures in JavaScript.",
-          "Closures allow a function to access variables from its outer scope even after the outer function has finished executing."
-        ),
-        voiceQ(
-          "Describe binary search algorithm.",
-          "Binary search repeatedly divides the sorted list in half until the target is found."
-        ),
-        textQ(
-          "What is a promise in JavaScript?",
-          "An object representing the eventual completion or failure of an asynchronous operation."
-        ),
-
-        mcq(
-          "What is the time complexity of quicksort on average?",
-          ["O(n log n)", "O(n^2)", "O(log n)"],
-          "O(n log n)"
-        ),
-        voiceQ(
-          "Explain the difference between process and thread.",
-          "A process is an independent program in execution, while a thread is a smaller unit of execution within a process."
-        ),
-        textQ(
-          "What is memoization in dynamic programming?",
-          "An optimization technique that stores computed results to avoid redundant calculations."
-        ),
-      ];
-    } else {
-      questions = [
-        textQ(
-          "Explain REST API principles.",
-          "REST uses stateless communication, resource-based URIs, and standard HTTP methods."
-        ),
-        voiceQ(
-          "Describe how garbage collection works in Java.",
-          "Automatically frees memory by removing objects no longer reachable."
-        ),
-        textQ(
-          "What are microservices?",
-          "An architectural style that structures an application as a collection of small, loosely coupled services."
-        ),
-        voiceQ(
-          "Explain difference between TCP and UDP.",
-          "TCP is connection-oriented, reliable; UDP is connectionless, faster but unreliable."
-        ),
-        textQ(
-          "What is polymorphism in OOP?",
-          "The ability of different objects to respond differently to the same function call."
-        ),
-        voiceQ(
-          "Explain CAP theorem.",
-          "States that in a distributed system you can only have two of Consistency, Availability, Partition tolerance."
-        ),
-        textQ(
-          "What is dependency injection?",
-          "A design pattern where dependencies are provided rather than hardcoded."
-        ),
-        voiceQ(
-          "Describe event loop in Node.js.",
-          "Handles asynchronous callbacks and non-blocking I/O."
-        ),
-        textQ(
-          "What are design patterns?",
-          "Reusable solutions to common software design problems."
-        ),
-        voiceQ(
-          "Explain how HTTPS works.",
-          "Uses SSL/TLS to encrypt data between client and server."
-        ),
-      ];
+      const quizData = JSON.parse(jsonString);
+      console.log("Generated Quiz Data:", quizData);
+      setQuiz(quizData);
+      setStarted(true);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      alert("Failed to generate quiz, try again.");
+    } finally {
+      setGenerating(false);
     }
+  }
 
-    setQuiz(questions);
-    setStarted(true);
-  };
+  async function validateAnswers() {
+    setValidating(true);
+
+    const prompt = `
+You are an expert quiz grader. Given the following 10 questions with their correct answers and user answers, check each user answer and return JSON with:
+- correct: boolean (true if user's answer is correct)
+- score: number (10 points for each correct answer)
+- totalScore: total out of 100
+- answers are present in quiz[i].answer respectively but validate user answer with quiz[i].question as some users might have wrote the answer generally and it might be correct.
+
+Questions:
+${JSON.stringify(quiz, null, 2)}
+
+User Answers:
+${JSON.stringify(answers, null, 2)}
+
+Return only JSON with this format:
+{
+  "results": [
+    { "questionIndex": 0, "correct": true },
+    { "questionIndex": 1, "correct": false },
+    ...
+  ],
+  "score": 70,
+  "totalScore": 100
+}
+    `;
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-lite",
+        contents: prompt,
+      });
+      const rawText = response.text || "";
+      const jsonString = rawText
+        .replace(/^```json/, "")
+        .replace(/^```/, "")
+        .replace(/```$/, "")
+        .trim();
+      
+      const result = JSON.parse(jsonString);
+      console.log("Response:", answers);
+      console.log("Answer Validation Result:", result);
+      setScore(result.score || 0);
+    } catch (e) {
+      alert("Failed to validate answers. Try again.");
+      console.error(e);
+    } finally {
+      setValidating(false);
+    }
+  }
 
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentIndex]: value });
   };
 
   const handleNext = () => {
-    if (currentIndex < quiz.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handleSubmitQuiz = () => {
-    let correctCount = 0;
-    quiz.forEach((q, i) => {
-      if (answers[i]?.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
-        correctCount++;
-      }
-    });
-    const totalScore = correctCount * 10;
-    setScore(totalScore);
+    if (currentIndex < quiz.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
   const currentQuestion = quiz[currentIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col">
-      {/* Top Bar */}
       <div className="flex justify-between items-center bg-gray-900 px-6 py-4 shadow-lg">
         <button
           onClick={() => navigate(-1)}
@@ -201,7 +166,6 @@ export default function QuizPage() {
         <div></div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         {!started && score === null && (
           <div className="text-center">
@@ -209,22 +173,26 @@ export default function QuizPage() {
               Ready to start your {type} quiz?
             </h2>
             <button
-              onClick={generateMockQuiz}
-              className="bg-indigo-500 hover:bg-indigo-600 px-6 py-3 rounded-lg shadow-lg text-lg"
+              onClick={generateQuizFromGemini}
+              disabled={generating}
+              className={`px-6 py-3 rounded-lg shadow-lg text-lg ${
+                generating
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-indigo-500 hover:bg-indigo-600"
+              }`}
             >
-              Start Quiz
+              {generating ? "Generating Quiz..." : "Start Quiz"}
             </button>
           </div>
         )}
 
-        {started && score === null && currentQuestion && (
+        {started && score === null && quiz.length > 0 && (
           <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold mb-4">
               Question {currentIndex + 1} of {quiz.length}
             </h3>
             <p className="mb-4">{currentQuestion.question}</p>
 
-            {/* Question Type Rendering */}
             {currentQuestion.type === "mcq" && (
               <div className="space-y-2">
                 {currentQuestion.options.map((opt: string, idx: number) => (
@@ -246,8 +214,7 @@ export default function QuizPage() {
               </div>
             )}
 
-            {(currentQuestion.type === "text" ||
-              currentQuestion.type === "voice") && (
+            {(currentQuestion.type === "text" || currentQuestion.type === "voice") && (
               <textarea
                 value={answers[currentIndex] || ""}
                 onChange={(e) => handleAnswerChange(e.target.value)}
@@ -266,10 +233,11 @@ export default function QuizPage() {
                 </button>
               ) : (
                 <button
-                  onClick={handleSubmitQuiz}
+                  onClick={validateAnswers}
+                  disabled={validating}
                   className="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg shadow"
                 >
-                  Submit Quiz
+                  {validating ? "Validating..." : "Submit Quiz"}
                 </button>
               )}
             </div>
@@ -289,8 +257,8 @@ export default function QuizPage() {
                 <button
                   onClick={() =>
                     generateCertificate(
-                      `${JSON.parse(localStorage.getItem("user") || "")?.name}`,
-                      type,
+                      `${user?.name || "User"}`,
+                      type || "",
                       (score / (quiz.length * 10)) * 100
                     )
                   }
