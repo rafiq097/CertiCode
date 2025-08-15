@@ -1,12 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { getToken } from "../utils/auth";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, clearUser } from "../store/userSlice";
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state: any) => state.user);
 
   useEffect(() => {
     async function fetchUser() {
@@ -22,7 +26,7 @@ export default function HomePage() {
 
         const data = res.data;
         if (data.status === "success") {
-          setUser(data.user);
+          dispatch(setUser(data.user));
           localStorage.setItem("user", JSON.stringify(data.user));
         } else {
           navigate("/login");
@@ -34,11 +38,10 @@ export default function HomePage() {
     }
 
     fetchUser();
-  }, []);
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      
       {/* Top Bar */}
       <header className="flex justify-between items-center px-6 py-4 bg-gray-900/80 backdrop-blur-md shadow-md">
         <h1 className="text-2xl font-extrabold text-indigo-400 tracking-wide">
@@ -69,12 +72,12 @@ export default function HomePage() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          
           {/* Dev Quiz */}
           <div
             onClick={(e) => {
-            e.preventDefault();
-            navigate("/quiz/dev")}}
+              e.preventDefault();
+              navigate("/quiz/dev");
+            }}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
             <div className="flex items-center justify-between">
@@ -92,8 +95,9 @@ export default function HomePage() {
           {/* DSA Quiz */}
           <div
             onClick={(e) => {
-            e.preventDefault();
-            navigate("/quiz/dsa")}}
+              e.preventDefault();
+              navigate("/quiz/dsa");
+            }}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
             <div className="flex items-center justify-between">
@@ -110,8 +114,8 @@ export default function HomePage() {
           {/* Interview Mode */}
           <div
             onClick={(e) => {
-            e.preventDefault();
-            navigate("/quiz/interview")
+              e.preventDefault();
+              navigate("/quiz/interview");
             }}
             className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-indigo-400 hover:shadow-indigo-500/30 transition cursor-pointer group"
           >
@@ -125,7 +129,6 @@ export default function HomePage() {
               Mixed-topic interview-style questions, text & voice answers only.
             </p>
           </div>
-
         </div>
       </main>
     </div>
